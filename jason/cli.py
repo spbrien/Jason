@@ -84,7 +84,13 @@ def main(database, username, password, hostname, port):
     app.add_route('/api/map', db_map)
 
     httpd = simple_server.make_server('127.0.0.1', 8000, app)
-    httpd.serve_forever()
+
+    try:
+        click.echo(click.style("\n[+] API available at http://127.0.0.1:8000\n", fg="white", bold=True))
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        click.echo(click.style("\n[!] Shutting down...", fg="white", bold=True))
+        pass
 
 if __name__ == "__main__":
     main()
