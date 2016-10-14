@@ -31,7 +31,7 @@ class Connection():
                 ]
 
     def all_json(self):
-        return self.format_out({c.__name__: table_to_dict(c) for c in self.base.classes})
+        return self.format_out({c.__name__: self.table_to_dict(c) for c in self.base.classes})
 
 
     def all_dict(self):
@@ -63,7 +63,7 @@ class Connection():
         if column is None:
             return {
                     'success': True,
-                    'content': table_to_dict(req_table_class)
+                    'content': self.table_to_dict(req_table_class)
                 }
         else:
             try:
