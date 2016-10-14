@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import multiprocessing
 import json
 
 import click
@@ -89,8 +90,8 @@ def main(database, username, password, hostname, port):
         click.echo(click.style("\n[+] API available at http://127.0.0.1:8000\n", fg="white", bold=True))
         httpd.serve_forever()
     except KeyboardInterrupt:
-        click.echo(click.style("\n[!] Shutting down...", fg="white", bold=True))
-        pass
+        httpd.shutdown()
+        httpd.server_close()
 
 if __name__ == "__main__":
     main()
