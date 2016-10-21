@@ -14,6 +14,7 @@ from models import Connection
 @click.option(
     '--database',
     prompt=True,
+    default='scotchbox',
     help='Database name.'
 )
 @click.option(

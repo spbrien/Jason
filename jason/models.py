@@ -5,7 +5,7 @@ import json
 
 
 class Connection():
-    
+
     def __init__(self, db_string):
         self.base = automap_base()
         self.engine = create_engine(db_string)
@@ -69,7 +69,7 @@ class Connection():
             try:
                 result = self.session.query(req_table_class).filter(
                     getattr(req_table_class, column) == identifier
-                ).first()
+                ).all()
             except AttributeError:
                 return {
                         'success': False,
@@ -82,10 +82,10 @@ class Connection():
             if result:
                 return {
                         'success': True,
-                        'content': {
-                             str(col).split('.')[1]: str(getattr(result, str(col).split('.')[1]))
-                             for col in result.__table__.columns
-                        }
+                        'content': [{
+                             str(col).split('.')[1]: str(getattr(item, str(col).split('.')[1]))
+                             for col in item.__table__.columns
+                        } for item in result]
                     }
             else:
                 return {
