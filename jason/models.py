@@ -91,11 +91,11 @@ class Connection():
             return apply_filter
 
         # if we don't have any filters, return all results
-        # else return filtered results
         if table_class and not filters:
             q = self.session.query(table_class).all()
             return collect_results(q)
 
+        # if we have filters, apply them
         if table_class and filters:
             query_base = self.session.query(table_class)
             full = reduce(
