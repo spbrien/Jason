@@ -35,7 +35,7 @@ class Connection():
     def get_table_contents(
         self,
         table_class,
-        filter=None,
+        _filter=None,
         group_by=None,
         limit=None,
         offset=None,
@@ -43,7 +43,7 @@ class Connection():
     ):
         # Add all filters / query modifiers to list
         filters = [
-            filter,
+            _filter,
             group_by,
             limit,
             offset,
