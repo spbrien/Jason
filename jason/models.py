@@ -9,8 +9,11 @@ from utils import format_json
 
 # TODO: Add function to process filters
 def parse_filters(filters):
-    print filters
-    return None
+    if 'filter' in filters:
+        filters['filter'] = [
+            get_operator(f) for f in filters['filter']
+        ]
+    return filters
 
 
 # TODO: Add function to get operators
@@ -26,12 +29,11 @@ def get_operator(string):
     for op in operator_map:
         if op in string:
             plan = {
-                'operator': operator_map(op),  # Will be function
+                'operator': operator_map[op],  # Will be function
                 'property_name': string.split(op)[0],
                 'proptery_value': string.split(op)[1]
             }
-            print plan
-    return string
+    return plan
 
 
 class Connection():
@@ -54,21 +56,8 @@ class Connection():
     def get_table_contents(
         self,
         table_class,
-        _filter=None,
-        group_by=None,
-        limit=None,
-        offset=None,
-        order_by=None
+        filters=None
     ):
-        # Add all filters / query modifiers to list
-        filters = [
-            _filter,
-            group_by,
-            limit,
-            offset,
-            order_by
-        ]
-
         # function to get the column name
         def column_name(column):
             return str(column).split('.')[1]
@@ -77,16 +66,25 @@ class Connection():
         def column_contents(table, column):
             return str(getattr(table, column_name(column)))
 
-        # if we don't have any filters, return all results
-        # else return filtered results
-        if table_class and not any(filters):
+        # function to collect query results
+        def collect_results(query):
             return [
                 {
                      column_name(col): column_contents(item, col)
                      for col in table_class.__table__.columns
                 }
-                for item in self.session.query(table_class).all()
+                for item in query
             ]
+        # def construct_query_with_filters(query_base):
+        #     for item in filters:
+        #         return getattr(query_base, item)()
+
+        # if we don't have any filters, return all results
+        # else return filtered results
+        if table_class and not any(filters):
+            q = self.session.query(table_class).all()
+            return collect_results(q)
+
         return None
 
     def query(self, table=None, column=None, filters=None):

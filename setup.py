@@ -12,8 +12,6 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'Click>=6.0',
     'Cython==0.23',
-    'falcon==0.3.0',
-    'gunicorn==19.3.0',
     'python-mimeparse==0.1.4',
     'six==1.9.0',
     'SQLAlchemy==1.0.8',
