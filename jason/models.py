@@ -1,7 +1,18 @@
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
-import json
+
+from utils import format_json
+
+
+# TODO: Add function to process filters
+def parse_filters(filters):
+    return filters
+
+
+# TODO: Add function to get operators
+def get_operator(string):
+    return string
 
 
 class Connection():
@@ -12,87 +23,71 @@ class Connection():
         self.base.prepare(self.engine, reflect=True)
         self.session = Session(self.engine)
 
-    def format_out(self, data):
-        return json.dumps(
-                            data,
-                            sort_keys=True,
-                            indent=4,
-                            separators=(',', ': ')
-                         )
+    def get_database_map(self):
+        tables = {
+            table_class.__name__: [
+                column_class.name for column_class
+                in table_class.__table__.columns
+            ] for table_class in self.base.classes
+        }
+        format_json(tables)
 
+    def get_table_contents(
+        self,
+        table_class,
+        filter=None,
+        group_by=None,
+        limit=None,
+        offset=None,
+        order_by=None
+    ):
+        # Add all filters / query modifiers to list
+        filters = [
+            filter,
+            group_by,
+            limit,
+            offset,
+            order_by
+        ]
 
-    def table_to_dict(self, c):
-        return [
-                    {
-                         str(col).split('.')[1]: str(getattr(item, str(col).split('.')[1]))
-                         for col in c.__table__.columns
-                    }
-                    for item in self.session.query(c).all()
-                ]
+        # function to get the column name
+        def column_name(column):
+            return str(column).split('.')[1]
 
-    def all_json(self):
-        return self.format_out({c.__name__: self.table_to_dict(c) for c in self.base.classes})
+        # function to get the column contents
+        def column_contents(table, column):
+            return str(getattr(table, column_name(column)))
 
+        # if we don't have any filters, return all results
+        # else return filtered results
+        if table_class and not any(filters):
+            return [
+                {
+                     column_name(col): column_contents(item, col)
+                     for col in table_class.__table__.columns
+                }
+                for item in self.session.query(table_class).all()
+            ]
+        return None
 
-    def all_dict(self):
-        return {c.__name__: self.table_to_dict(c) for c in self.base.classes}
+    def query(self, table=None, column=None, filters=None):
+        # get query filters
+        query_filters = parse_filters(filters)
+        # Try to find the requested table, return None if non-existant fs
+        table_to_query_class = next(
+            (
+                table_class for table_class
+                in self.base.classes
+                if table_class.__name__.lower() == table.lower()
+            ),
+            None
+        )
+        if not table_to_query_class:
+            format_json({
+                'error': 'The %s table does not exist' % table
+            })
 
-
-    def get_tables(self):
-        tables = {c.__name__: [item.name for item in c.__table__.columns]
-                  for c in self.base.classes
-                  }
-        return tables
-
-
-    def get_entity(self, table=None, column=None, identifier=None):
-        req_table_class = next(
-                (c for c in self.base.classes if c.__name__.lower() == table.lower()),
-                None
+        if table_to_query_class and not column:
+            format_json(
+                self.get_table_contents(table_to_query_class, query_filters)
             )
-
-        if not req_table_class:
-            return {
-                    'success': False,
-                    'content': {
-                        'error': 404,
-                        'msg': 'No such database table exists'
-                    }
-                }
-
-        if column is None:
-            return {
-                    'success': True,
-                    'content': self.table_to_dict(req_table_class)
-                }
-        else:
-            try:
-                result = self.session.query(req_table_class).filter(
-                    getattr(req_table_class, column) == identifier
-                ).all()
-            except AttributeError:
-                return {
-                        'success': False,
-                        'content': {
-                            'error': 404,
-                            'msg': 'Are you sure that column exists? Column names are case-sensitive...'
-                        }
-                    }
-
-            if result:
-                return {
-                        'success': True,
-                        'content': [{
-                             str(col).split('.')[1]: str(getattr(item, str(col).split('.')[1]))
-                             for col in item.__table__.columns
-                        } for item in result]
-                    }
-            else:
-                return {
-                        'success': False,
-                        'content': {
-                            'error': 404,
-                            'msg': 'No such entity exists'
-                        }
-                    }
-
