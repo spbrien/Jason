@@ -1,3 +1,5 @@
+import operator
+
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
@@ -7,11 +9,28 @@ from utils import format_json
 
 # TODO: Add function to process filters
 def parse_filters(filters):
-    return filters
+    print filters
+    return None
 
 
 # TODO: Add function to get operators
 def get_operator(string):
+    operator_map = {
+        '==': operator.eq,
+        '!=': operator.ne,
+        '>=': operator.ge,
+        '<=': operator.le,
+        '>': operator.gt,
+        '<': operator.lt,
+    }
+    for op in operator_map:
+        if op in string:
+            plan = {
+                'operator': operator_map(op),  # Will be function
+                'property_name': string.split(op)[0],
+                'proptery_value': string.split(op)[1]
+            }
+            print plan
     return string
 
 

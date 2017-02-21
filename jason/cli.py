@@ -34,8 +34,15 @@ from models import Connection
     default='3306',
     help='Port for the running MySQL instance.'
 )
-def main(database, username, password, hostname, port):
+@click.option(
+    '--filters',
+    help='Filter your sql query. Example: --filters id==2,comment_count>=3'
+)
+def main(database, username, password, hostname, port, filters):
     """Console script for turning your database into JSON"""
+    raw_filters = {}
+    if filters:
+        raw_filters['filter'] = filters.split(',')
 
     db_string = 'mysql+mysqldb://%s:%s@%s:%s/%s' % (
         username,
@@ -45,7 +52,10 @@ def main(database, username, password, hostname, port):
         database
     )
     connection = Connection(db_string)
-    connection.query(table="nonsense")
+    connection.query(
+        table="nonsense",
+        filters=raw_filters
+    )
 
 
 if __name__ == "__main__":
