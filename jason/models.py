@@ -9,11 +9,9 @@ from utils import format_json
 
 # TODO: Add function to process filters
 def parse_filters(filters):
-    if 'filter' in filters:
-        filters['filter'] = [
-            get_operator(f) for f in filters['filter']
-        ]
-    return filters
+    return [
+        get_operator(f) for f in filters
+    ]
 
 
 # TODO: Add function to get operators
@@ -31,9 +29,20 @@ def get_operator(string):
             plan = {
                 'operator': operator_map[op],  # Will be function
                 'property_name': string.split(op)[0],
-                'proptery_value': string.split(op)[1]
+                'property_value': string.split(op)[1]
             }
-    return plan
+
+            def create_filter_function(query_base, queried_class):
+                return getattr(query_base, 'filter')(
+                    plan['operator'](
+                        getattr(
+                            queried_class,
+                            plan['property_name']
+                        ),
+                        plan['property_value']
+                    )
+                )
+            return create_filter_function
 
 
 class Connection():
@@ -75,21 +84,33 @@ class Connection():
                 }
                 for item in query
             ]
-        # def construct_query_with_filters(query_base):
-        #     for item in filters:
-        #         return getattr(query_base, item)()
+
+        def construct_query_with_filters(filter_function):
+            def apply_filter(query_base):
+                return filter_function(query_base, table_class)
+            return apply_filter
 
         # if we don't have any filters, return all results
         # else return filtered results
-        if table_class and not any(filters):
+        if table_class and not filters:
             q = self.session.query(table_class).all()
             return collect_results(q)
+
+        if table_class and filters:
+            query_base = self.session.query(table_class)
+            full = reduce(
+                lambda x, y: construct_query_with_filters(y)(x),
+                filters,
+                query_base
+            )
+            return collect_results(full.all())
 
         return None
 
     def query(self, table=None, column=None, filters=None):
         # get query filters
         query_filters = parse_filters(filters)
+
         # Try to find the requested table, return None if non-existant fs
         table_to_query_class = next(
             (

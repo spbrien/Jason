@@ -42,7 +42,7 @@ def main(database, username, password, hostname, port, filters):
     """Console script for turning your database into JSON"""
     raw_filters = {}
     if filters:
-        raw_filters['filter'] = filters.split(',')
+        raw_filters = filters.split(',')
 
     db_string = 'mysql+mysqldb://%s:%s@%s:%s/%s' % (
         username,
@@ -53,7 +53,7 @@ def main(database, username, password, hostname, port, filters):
     )
     connection = Connection(db_string)
     connection.query(
-        table="nonsense",
+        table="wp_posts",
         filters=raw_filters
     )
 
